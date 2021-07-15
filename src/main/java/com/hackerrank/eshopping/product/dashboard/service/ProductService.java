@@ -1,6 +1,7 @@
 package com.hackerrank.eshopping.product.dashboard.service;
 
 import com.hackerrank.eshopping.product.dashboard.exception.BadRequest;
+import com.hackerrank.eshopping.product.dashboard.exception.NotFound;
 import com.hackerrank.eshopping.product.dashboard.model.Product;
 import com.hackerrank.eshopping.product.dashboard.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ProductService {
@@ -18,38 +20,48 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
-    public void save(List<Product> users) {
-
-    }
-
-    public boolean addProduct(int id, String name, String category, double retail_price, double discounted_price, boolean availability) {
+    public HttpStatus addProduct(int id, String name, String category, double retail_price, double discounted_price, boolean availability) {
+        if(exist(id)){
+            throw new BadRequest(err);
+        }
         Product product = new Product(id, name, category, retail_price, discounted_price, availability);
         productRepository.save(product);
-        if(productRepository.existsById(id)){
-            return false;
-        }
-        return true;
+        return HttpStatus.valueOf(201);
     }
 
-    public boolean updateProduct(int product_id, double retail_price, double discounted_price, boolean availability) {
-        if(productRepository.existsById(product_id)){
-            Product product = productRepository.getOne(product_id);
-            product.setRetail_price(retail_price);
-            product.setDiscounted_price(discounted_price);
-            product.setAvailability(availability);
-            productRepository.save(product);
-            return true;
+    public HttpStatus updateProduct(int product_id, double retail_price, double discounted_price, boolean availability) {
+        if(!exist(product_id)){
+            throw new BadRequest(err);
         }
-        return false;
+        Product product = productRepository.getOne(product_id);
+        product.setRetail_price(retail_price);
+        product.setDiscounted_price(discounted_price);
+        product.setAvailability(availability);
+        productRepository.save(product);
+        return HttpStatus.valueOf(200);
     }
 
-    // Testeando ResponseEntity, una vez lo logre cambiar toda la API con ResponseEntity
     public ResponseEntity<Product> findById(int id) {
         if(!exist(id)){
-            throw new BadRequest( err );
+            throw new NotFound( err );
         }
         Product product = productRepository.getOne(id);
         return new ResponseEntity<>(product, HttpStatus.valueOf(200));
+    }
+
+    public ResponseEntity<List<Product>> findByCategory(String category) {
+        if(!existCategory(category)){
+            throw new NotFound( err );
+        }
+        List<Product> products = productRepository.findAll();
+        List<Product> productsByCategory = products.stream().filter(product -> product.getCategory().equals(category)).collect(Collectors.toList());
+        // Falta ordenar la lista de productos por availability, luego por discounted price y por ultimo por ID.
+        return new ResponseEntity<>(productsByCategory, HttpStatus.valueOf(200));
+    }
+
+    private boolean existCategory(String category) {
+        List<Product> products = productRepository.findAll();
+        return products.stream().filter(product -> product.getCategory().equals(category)).count() == 0;
     }
 
     private boolean exist(int id) {

@@ -30,3 +30,9 @@ Discount Percentage = (Retail Price - Discounted Price) / Retail Price x 100
 #### It is guaranteed that the discount percentage is always an integer.
 6. Return all products. The service should be able to return the JSON array of all products by the GET request at /products. The
    HTTP response code should be 200. The JSON array should be sorted by the ID in the ascending order.
+
+Complete the given project so that it passes all the test cases when running the provided JUnit tests. The project by default supports the use of H2 database, but you can make use of any database to store the data by specifying the dependency in the pom.xml file. Make sure that:
+
+- You configure the models correctly, so serialization and deserialization work as expected. 
+- The field names in the response JSON and expected response JSON must exactly match. For example, sending retailprice,
+retail-price, or retailPrice in the response when retail_price is expected is a wrong response.

@@ -15,9 +15,9 @@ The REST API service should implement the following functionalities:
 2. Update a product by id: The service should be able to update a product by the PUT request at /products/{product_id}. 
    
 The product JSON sent in the request body is described by the following keys:
-   - retail_price: The updated retail price. The value may remain unchanged.
-    - discounted_price: The updated discounted price. The value may remain unchanged.
-    - availability: The updated availability. The value may remain unchanged.
+- retail_price: The updated retail price. The value may remain unchanged
+- discounted_price: The updated discounted price. The value may remain unchanged
+- availability: The updated availability. The value may remain unchanged
     
 If the product with the requested ID does not exist then the HTTP response code should be 400; otherwise, the response code should be 200.
 

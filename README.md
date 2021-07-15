@@ -7,6 +7,7 @@ Each product is a JSON entry with the following keys:
 - name: Name of the product.
 - category: Category of the product.
 - retail_price: The recommended selling price of the product. The price is given up to two places of decimal.
+- discounted_price: The current selling price of the product. The price is given up to two places of decimal.
 - availability: A boolean value that indicates whether the product is in stock (true) or out of stock (false).
 
 The REST API service should implement the following functionalities:

@@ -9,6 +9,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -55,13 +56,19 @@ public class ProductService {
         }
         List<Product> products = productRepository.findAll();
         List<Product> productsByCategory = products.stream().filter(product -> product.getCategory().equals(category)).collect(Collectors.toList());
-        // Falta ordenar la lista de productos por availability, luego por discounted price y por ultimo por ID.
-        return new ResponseEntity<>(productsByCategory, HttpStatus.valueOf(200));
+        List<Product> productsSortedByAvailability = productsByCategory.stream().sorted(Comparator.comparing(Product::isAvailability)).collect(Collectors.toList());
+        List<Product> productsSortedByDiscounted = productsSortedByAvailability.stream().sorted(Comparator.comparing(Product::getDiscounted_price)).collect(Collectors.toList());
+        List<Product> productsSortedById = productsSortedByDiscounted.stream().sorted(Comparator.comparing(Product::getId)).collect(Collectors.toList());
+        return new ResponseEntity<>(productsSortedById, HttpStatus.valueOf(200));
+    }
+
+    public ResponseEntity<List<Product>> findByCatAndAvail(String category, int availability) {
+        // Working on
     }
 
     private boolean existCategory(String category) {
         List<Product> products = productRepository.findAll();
-        return products.stream().filter(product -> product.getCategory().equals(category)).count() == 0;
+        return products.stream().filter(product -> product.getCategory().equals(category)).count() > 0;
     }
 
     private boolean exist(int id) {

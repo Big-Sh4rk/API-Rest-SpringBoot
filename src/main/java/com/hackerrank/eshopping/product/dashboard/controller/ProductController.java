@@ -43,5 +43,8 @@ public class ProductController {
         return productService.findByCategory(category);
     }
 
-
+    @GetMapping("/products?category={category}&availability= {availability}")
+    public @ResponseBody ResponseEntity<List<Product>> findProductByCatAndAvail(@RequestParam String category, @RequestParam int availability){
+        return productService.findByCatAndAvail(category, availability);
+    }
 }

@@ -16,14 +16,15 @@ import java.util.stream.Collectors;
 @Service
 public class ProductService {
 
-    private static String err;
-
     @Autowired
     private ProductRepository productRepository;
 
+    private static final String err = "Error: ";
+    private final List<Product> products = productRepository.findAll();
+
     public HttpStatus addProduct(int id, String name, String category, double retail_price, double discounted_price, boolean availability) {
         if(exist(id)){
-            throw new BadRequest(err);
+            throw new BadRequest( err );
         }
         Product product = new Product(id, name, category, retail_price, discounted_price, availability);
         productRepository.save(product);
@@ -32,7 +33,7 @@ public class ProductService {
 
     public HttpStatus updateProduct(int product_id, double retail_price, double discounted_price, boolean availability) {
         if(!exist(product_id)){
-            throw new BadRequest(err);
+            throw new BadRequest( err );
         }
         Product product = productRepository.getOne(product_id);
         product.setRetail_price(retail_price);
@@ -54,21 +55,92 @@ public class ProductService {
         if(!existCategory(category)){
             throw new NotFound( err );
         }
-        List<Product> products = productRepository.findAll();
-        List<Product> productsByCategory = products.stream().filter(product -> product.getCategory().equals(category)).collect(Collectors.toList());
-        List<Product> productsSortedByAvailability = productsByCategory.stream().sorted(Comparator.comparing(Product::isAvailability)).collect(Collectors.toList());
-        List<Product> productsSortedByDiscounted = productsSortedByAvailability.stream().sorted(Comparator.comparing(Product::getDiscounted_price)).collect(Collectors.toList());
-        List<Product> productsSortedById = productsSortedByDiscounted.stream().sorted(Comparator.comparing(Product::getId)).collect(Collectors.toList());
-        return new ResponseEntity<>(productsSortedById, HttpStatus.valueOf(200));
+
+        List<Product> productsByCategory = products.stream()
+                .filter(product -> product.getCategory().equals(category))
+                .collect(Collectors.toList());
+        List<Product> productsSortedByAvailability = productsByCategory.stream()
+                .sorted(Comparator.comparing(Product::isAvailability,Comparator.reverseOrder()))
+                        .collect(Collectors.toList());
+        List<Product> productsSorted = finalSort(productsSortedByAvailability);
+        return new ResponseEntity<>(productsSorted, HttpStatus.valueOf(200));
     }
 
     public ResponseEntity<List<Product>> findByCatAndAvail(String category, int availability) {
-        // Working on
+        if(!existCategory(category)){
+            throw new NotFound( err );
+        } else if(availability == 0){
+            List<Product> productsAvailFalse = products.stream()
+                    .filter(product -> !product.isAvailability())
+                    .collect(Collectors.toList());
+            List<Product> productsCat = productsAvailFalse.stream()
+                    .filter(product -> product.getCategory().equals(category))
+                    .collect(Collectors.toList());
+            List<Product> productsSorted = sortedByPercentage(productsCat);
+            return new ResponseEntity<>(productsSorted, HttpStatus.valueOf(200));
+        }
+        List<Product> productsAvailTrue = products.stream()
+                .filter(product -> product.isAvailability())
+                .collect(Collectors.toList());
+        List<Product> productsCat = productsAvailTrue.stream()
+                .filter(product -> product.getCategory().equals(category))
+                .collect(Collectors.toList());
+        List<Product> productsSorted = sortedByPercentage(productsCat);
+        return new ResponseEntity<>(productsSorted, HttpStatus.valueOf(200));
+    }
+
+    private List<Product> sortedByPercentage(List<Product> productsList) {
+        int firstPer, secondPer;
+        Product a, b;
+        for(int i = 0; i < productsList.size() - 1; i++){
+            a = productsList.get(i);
+            b = productsList.get(i+1);
+            firstPer = DiscountedPercentage(a);
+            secondPer = DiscountedPercentage(b);
+            if(firstPer < secondPer){
+                productsList.set(i, b);
+                productsList.set(i+1, a);
+            } if(firstPer == secondPer){
+                if(a.getDiscounted_price() == b.getDiscounted_price()){
+                    if(a.getId() > b.getId()){
+                        productsList.set(i, b);
+                        productsList.set(i+1, a);
+                    }
+                } else if(a.getDiscounted_price() > b.getDiscounted_price()){
+                    productsList.set(i, b);
+                    productsList.set(i+1, a);
+                }
+            }
+        }
+        return productsList;
+    }
+
+    private int DiscountedPercentage(Product p) {
+        return (int) ((p.getRetail_price() - p.getDiscounted_price()) / (p.getRetail_price() * 100));
+    }
+
+    private List<Product> finalSort(List<Product> productsList) {
+        Product aux;
+        for(int i = 0; i < productsList.size() -1; i++){
+            if(productsList.get(i).isAvailability() == productsList.get(i+1).isAvailability()){
+                if(productsList.get(i).getDiscounted_price() == productsList.get(i+1).getDiscounted_price()){
+                    if(productsList.get(i).getId() > productsList.get(i+1).getId()){
+                        aux = productsList.get(i);
+                        productsList.set(i, productsList.get(i+1));
+                        productsList.set(i+1, aux);
+                    }
+                } else if(productsList.get(i).getDiscounted_price() > productsList.get(i+1).getDiscounted_price()){
+                    aux = productsList.get(i);
+                    productsList.set(i, productsList.get(i+1));
+                    productsList.set(i+1, aux);
+                }
+            }
+        }
+        return productsList;
     }
 
     private boolean existCategory(String category) {
-        List<Product> products = productRepository.findAll();
-        return products.stream().filter(product -> product.getCategory().equals(category)).count() > 0;
+        return products.stream().anyMatch(product -> product.getCategory().equals(category));
     }
 
     private boolean exist(int id) {

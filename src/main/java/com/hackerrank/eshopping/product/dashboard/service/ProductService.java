@@ -22,6 +22,8 @@ public class ProductService {
     private static final String err = "Error: ";
     private final List<Product> products = productRepository.findAll();
 
+    // Methods for the Controller
+
     public HttpStatus addProduct(int id, String name, String category, double retail_price, double discounted_price, boolean availability) {
         if(exist(id)){
             throw new BadRequest( err );
@@ -89,6 +91,13 @@ public class ProductService {
         return new ResponseEntity<>(productsSorted, HttpStatus.valueOf(200));
     }
 
+    public ResponseEntity<List<Product>> allProducts() {
+        List<Product> productsSorted = products.stream().sorted(Comparator.comparingInt(Product::getId)).collect(Collectors.toList());
+        return new ResponseEntity<>(productsSorted, HttpStatus.valueOf(200));
+    }
+
+    // Private methods
+
     private List<Product> sortedByPercentage(List<Product> productsList) {
         int firstPer, secondPer;
         Product a, b;
@@ -145,5 +154,13 @@ public class ProductService {
 
     private boolean exist(int id) {
         return productRepository.existsById(id);
+    }
+
+    // Method for testing (I guess)
+
+    public void save(List<Product> users) {
+        for (Product product : users) {
+            productRepository.save(product);
+        }
     }
 }
